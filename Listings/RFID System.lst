@@ -1,0 +1,237 @@
+C51 COMPILER V9.60.0.0   RFID_SYSTEM                                                       02/21/2020 14:53:30 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE RFID_SYSTEM
+OBJECT MODULE PLACED IN .\Objects\RFID System.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE RFID System.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listin
+                    -gs\RFID System.lst) TABS(2) OBJECT(.\Objects\RFID System.obj)
+
+line level    source
+
+   1          #include<reg51.h>
+   2          #include<string.h>
+   3          #include<stdio.h>
+   4          #define lcdport P1
+   5          
+   6          sbit rs=P1^0;
+   7          sbit rw=P1^1;
+   8          sbit en=P1^2;
+   9          sbit m1=P2^4;
+  10          sbit m2=P2^5;
+  11          sbit buzzer=P2^6;
+  12          char i,rx_data[50];
+  13          char rfid[13],ch=0;
+  14          int count1, count2, count3;
+  15          unsigned char result[1];
+  16          
+  17           void delay(int itime)
+  18          {
+  19   1          int i,j;
+  20   1          for(i=0;i<itime;i++)
+  21   1          for(j=0;j<1275;j++);
+  22   1      }
+  23          
+  24          void daten()
+  25          {
+  26   1          rs=1;
+  27   1          rw=0;
+  28   1          en=1;
+  29   1          delay(5);
+  30   1          en=0;
+  31   1      }
+  32          
+  33          void lcddata(unsigned char ch)
+  34          {
+  35   1          lcdport=ch & 0xf0;
+  36   1          daten();
+  37   1          lcdport=(ch<<4) & 0xf0;
+  38   1          daten();
+  39   1      }
+  40          
+  41          void cmden(void)
+  42          {
+  43   1          rs=0;
+  44   1          en=1;
+  45   1          delay(5);
+  46   1          en=0;
+  47   1      }
+  48          
+  49          void lcdcmd(unsigned char ch)
+  50          {
+  51   1          lcdport=ch & 0xf0;
+  52   1          cmden();
+  53   1          lcdport=(ch<<4) & 0xf0;
+  54   1          cmden();
+C51 COMPILER V9.60.0.0   RFID_SYSTEM                                                       02/21/2020 14:53:30 PAGE 2   
+
+  55   1      }
+  56          
+  57          void lcdstring(char *str)
+  58          {
+  59   1          while(*str)
+  60   1          {
+  61   2              lcddata(*str);
+  62   2              str++;
+  63   2          }
+  64   1      }
+  65          
+  66          void lcd_init(void)
+  67          {
+  68   1          lcdcmd(0x02);
+  69   1          lcdcmd(0x28);
+  70   1          lcdcmd(0x0e);
+  71   1          lcdcmd(0x01);
+  72   1      }
+  73          
+  74          void uart_init()
+  75          {
+  76   1       TMOD=0x20;
+  77   1       SCON=0x50;
+  78   1       TH1=0xfd;
+  79   1       TR1=1;
+  80   1      }
+  81          char rxdata()
+  82          {
+  83   1        while(!RI);
+  84   1          ch=SBUF;    
+  85   1          RI=0;
+  86   1          return ch;
+  87   1      }
+  88          
+  89          void main()
+  90          {
+  91   1          buzzer=1;
+  92   1          uart_init();
+  93   1          lcd_init();
+  94   1          lcdstring("   RFID BASED   ");
+  95   1          lcdcmd(0xc0);
+  96   1          lcdstring("   ATTENDANCE   "); 
+  97   1          delay(400);
+  98   1          while(1)
+  99   1          {
+ 100   2              lcdcmd(1);
+ 101   2              lcdstring("PLACE YOUR CARD:");
+ 102   2              lcdcmd(0xc0);
+ 103   2              i=0;
+ 104   2              for(i=0;i<12;i++)
+ 105   2              rfid[i]=rxdata();
+ 106   2              rfid[i]='\0';
+ 107   2              lcdcmd(1);
+ 108   2              lcdstring("YOUR ID NO. IS:");
+ 109   2              lcdcmd(0xc0);
+ 110   2              for(i=0;i<12;i++)
+ 111   2              lcddata(rfid[i]);
+ 112   2              delay(100);
+ 113   2              if(strncmp(rfid,"160066A5EC39",12)==0)
+ 114   2              {
+ 115   3                  count1++;
+ 116   3                  lcdcmd(1);
+C51 COMPILER V9.60.0.0   RFID_SYSTEM                                                       02/21/2020 14:53:30 PAGE 3   
+
+ 117   3                  lcdstring(" ATTENDANCE ");
+ 118   3                  lcdcmd(0xc0);
+ 119   3                  lcdstring(" REGISTERED");
+ 120   3                  delay(200);
+ 121   3                  lcdcmd(1);
+ 122   3                  lcdstring(" Student1 ");
+ 123   3                  lcdcmd(0xc0);
+ 124   3                  lcdstring("Attnd. No.: ");
+ 125   3                  sprintf(result, "%d", count1);
+ 126   3                  lcdstring(result);
+ 127   3                  
+ 128   3                  m1=1;
+ 129   3                  m2=0;
+ 130   3                  delay(300);
+ 131   3                  m1=0;
+ 132   3                  m2=0;
+ 133   3                  delay(200);
+ 134   3                  m1=0;
+ 135   3                  m2=1;
+ 136   3                  delay(300);
+ 137   3                  m1=0;
+ 138   3                  m2=0;
+ 139   3              }
+ 140   2              
+ 141   2              else if(strncmp(rfid,"160066BD7AB7",12)==0)
+ 142   2                  {
+ 143   3                  count2++;
+ 144   3                  lcdcmd(1);
+ 145   3                  lcdstring(" Attendance ");
+ 146   3                  lcdcmd(0xc0);
+ 147   3                  lcdstring(" Registered");
+ 148   3                  delay(200);
+ 149   3                  lcdcmd(1);
+ 150   3                  lcdstring(" Student2 ");
+ 151   3                  lcdcmd(0xc0);
+ 152   3                  lcdstring("Attnd. No.: ");
+ 153   3                  sprintf(result, "%d", count2);
+ 154   3                  lcdstring(result);
+ 155   3                  
+ 156   3                  m1=1;
+ 157   3                  m2=0;
+ 158   3                  delay(300);
+ 159   3                  m1=0;
+ 160   3                  m2=0;
+ 161   3                  delay(200);
+ 162   3                  m1=0;
+ 163   3                  m2=1;
+ 164   3                  delay(300);
+ 165   3                  m1=0;
+ 166   3                  m2=0;
+ 167   3            }
+ 168   2                  
+ 169   2                      else if(strncmp(rfid,"160066203060",12)==0)
+ 170   2                  {
+ 171   3                      count3++;
+ 172   3                  lcdcmd(1);
+ 173   3                  lcdstring(" Attendance ");
+ 174   3                  lcdcmd(0xc0);
+ 175   3                  lcdstring(" Registered");
+ 176   3                  delay(200);
+ 177   3                  lcdcmd(1);
+ 178   3                  lcdstring(" Student3 ");
+C51 COMPILER V9.60.0.0   RFID_SYSTEM                                                       02/21/2020 14:53:30 PAGE 4   
+
+ 179   3                  lcdcmd(0xc0);
+ 180   3                  lcdstring("Attnd. No.: ");
+ 181   3                  sprintf(result, "%d", count3);
+ 182   3                  lcdstring(result);
+ 183   3                  
+ 184   3                  m1=1;
+ 185   3                  m2=0;
+ 186   3                  delay(300);
+ 187   3                  m1=0;
+ 188   3                  m2=0;
+ 189   3                  delay(200);
+ 190   3                  m1=0;
+ 191   3                  m2=1;
+ 192   3                  delay(300);
+ 193   3                  m1=0;
+ 194   3                  m2=0;
+ 195   3      
+ 196   3                  }
+ 197   2      
+ 198   2              else 
+ 199   2              {
+ 200   3                 lcdcmd(1);
+ 201   3                 lcdstring("Invalid Card");
+ 202   3                 buzzer=0;
+ 203   3                 delay(300);
+ 204   3                 buzzer=1;
+ 205   3              }
+ 206   2        }
+ 207   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    739    ----
+   CONSTANT SIZE    =    218    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     72       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
